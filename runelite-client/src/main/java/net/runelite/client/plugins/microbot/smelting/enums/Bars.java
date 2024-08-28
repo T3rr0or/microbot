@@ -6,11 +6,13 @@ import net.runelite.client.plugins.microbot.util.inventory.Rs2Inventory;
 
 import java.util.Map;
 
+// Added Blurite bar
+
 @Getter
 @RequiredArgsConstructor
 public enum Bars {
     BRONZE("bronze bar", 1, Map.of(Ores.COPPER, 1, Ores.TIN, 1)),
-    BLURITE("blurite bar", 8, Map.of(Ores.BLURITE, 1)),  // Added Blurite bar
+    BLURITE("blurite bar", 8, Map.of(Ores.BLURITE, 1)),
     IRON("iron bar", 15, Map.of(Ores.IRON, 1)),
     SILVER("silver bar", 20, Map.of(Ores.SILVER, 1)),
     STEEL("steel bar", 30, Map.of(Ores.IRON, 1, Ores.COAL, 2)),

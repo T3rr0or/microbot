@@ -3,6 +3,8 @@ package net.runelite.client.plugins.microbot.smelting.enums;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+// Added Blurite bar
+
 @Getter
 @RequiredArgsConstructor
 public enum Ores {
