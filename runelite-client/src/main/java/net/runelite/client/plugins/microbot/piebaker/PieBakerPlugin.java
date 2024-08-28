@@ -7,7 +7,6 @@ import net.runelite.api.ItemID;
 import net.runelite.api.Skill;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.ItemContainerChanged;
-import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
@@ -17,7 +16,6 @@ import net.runelite.client.plugins.microbot.util.bank.Rs2Bank;
 import net.runelite.client.plugins.microbot.util.inventory.Rs2Inventory;
 import net.runelite.client.plugins.microbot.util.magic.Rs2Magic;
 import net.runelite.client.plugins.skillcalculator.skills.MagicAction;
-import net.runelite.client.ui.overlay.OverlayManager;
 
 import javax.inject.Inject;
 import java.time.Instant;
@@ -32,16 +30,16 @@ import java.util.Map;
 )
 @Slf4j
 public class PieBakerPlugin extends Plugin {
-    @Inject
-    private OverlayManager overlayManager;
-
-    @Inject
-    private PieBakerOverlay pieBakerOverlay;
 
     @Inject
     private PieBakerConfig config;
 
     private static final Map<String, Integer> RAW_PIES = new HashMap<>();
+    private static final String WATER_RUNE_NAME = "Water rune";
+    private static final String FIRE_RUNE_NAME = "Fire rune";
+    private static final String ASTRAL_RUNE_NAME = "Astral rune";
+
+    private Instant lastBakeTime = Instant.now();
 
     static {
         RAW_PIES.put("uncooked berry pie", ItemID.UNCOOKED_BERRY_PIE);
@@ -69,7 +67,6 @@ public class PieBakerPlugin extends Plugin {
 
     @Override
     protected void startUp() {
-        overlayManager.add(pieBakerOverlay);
         startTime = Instant.now();
         startMagicXP = Microbot.getClient().getSkillExperience(Skill.MAGIC);
         startCookingXP = Microbot.getClient().getSkillExperience(Skill.COOKING);
@@ -77,48 +74,90 @@ public class PieBakerPlugin extends Plugin {
 
     @Override
     protected void shutDown() {
-        overlayManager.remove(pieBakerOverlay);
+        // No additional cleanup needed.
     }
 
     @Subscribe
     public void onItemContainerChanged(ItemContainerChanged event) {
         if (event.getContainerId() == InventoryID.BANK.getId()) {
-            if (Rs2Inventory.isEmpty() && shouldWithdrawPies()) {
-                withdrawPies();
+            if (!Rs2Inventory.hasItem(RAW_PIES.keySet().toArray(new String[0])) && shouldWithdrawRunes()) {
+                withdrawRunes();
             }
         }
     }
 
+
     @Subscribe
     public void onGameTick(GameTick event) {
         String[] rawPiesArray = RAW_PIES.keySet().toArray(new String[0]);
+
         if (Rs2Inventory.hasItem(rawPiesArray)) {
-            castBakePieSpell();
-        } else if (Rs2Inventory.isEmpty() && shouldWithdrawPies()) {
-            withdrawPies();
+            if (Instant.now().isAfter(lastBakeTime.plusSeconds(5))) {
+                if (Rs2Bank.isOpen()) {
+                    Rs2Bank.closeBank();
+                } else {
+                    castBakePieSpell();
+                    lastBakeTime = Instant.now();  // Update last bake time after casting the spell
+                }
+            }
         } else {
-            Rs2Bank.depositAll();
+            if (!Rs2Bank.isOpen()) {
+                if (Rs2Bank.walkToBank()) {  // Walk to the nearest bank if not already there
+                    Rs2Bank.openBank();  // Attempt to open the bank once the player is there
+                }
+            } else {
+                // Deposit all items and withdraw new ones in a single step
+                depositAndWithdraw(rawPiesArray);
+            }
         }
     }
 
-    private boolean shouldWithdrawPies() {
-        return Rs2Bank.hasItem(getSelectedRawPieId());
+    private void depositAndWithdraw(String[] rawPiesArray) {
+        // Ensure the bank is open before proceeding
+        Rs2Bank.depositAll(); // Deposit all items in the inventory
+
+        if (areRunesWithdrawn()) {
+            withdrawPies();
+        } else {
+            withdrawRunes(); // Retry withdrawing runes if not done
+        }
+    }
+
+
+    private boolean shouldWithdrawRunes() {
+        return Rs2Bank.hasItem(WATER_RUNE_NAME) || Rs2Bank.hasItem(FIRE_RUNE_NAME) || Rs2Bank.hasItem(ASTRAL_RUNE_NAME);
+    }
+
+    private void withdrawRunes() {
+        if (Rs2Bank.isOpen()) {
+            Rs2Bank.withdrawAll(WATER_RUNE_NAME); // Withdraw all water runes
+            Rs2Bank.withdrawAll(FIRE_RUNE_NAME);  // Withdraw all fire runes
+            Rs2Bank.withdrawAll(ASTRAL_RUNE_NAME); // Withdraw all astral runes
+        }
+    }
+
+    private boolean areRunesWithdrawn() {
+        return Rs2Inventory.hasItem(WATER_RUNE_NAME) && Rs2Inventory.hasItem(FIRE_RUNE_NAME) && Rs2Inventory.hasItem(ASTRAL_RUNE_NAME);
     }
 
     private void withdrawPies() {
-        Rs2Bank.withdrawAll(getSelectedRawPieId());
+        if (Rs2Bank.isOpen()) {
+            Rs2Bank.withdrawAll(getSelectedRawPieId()); // Withdraw raw pies
+        }
     }
 
     private void castBakePieSpell() {
+        String[] rawPiesArray = RAW_PIES.keySet().toArray(new String[0]);
+
         if (config.tickPerfect()) {
-            String[] rawPiesArray = RAW_PIES.keySet().toArray(new String[0]);
-            while (Rs2Inventory.hasItem(rawPiesArray)) {
+            for (int i = 0; i < 10 && Rs2Inventory.hasItem(rawPiesArray); i++) {
                 Rs2Magic.cast(MagicAction.BAKE_PIE);
             }
         } else {
             Rs2Magic.cast(MagicAction.BAKE_PIE);
         }
     }
+
 
     private int getSelectedRawPieId() {
         return RAW_PIES.getOrDefault(config.selectedPie().toLowerCase(), -1);
