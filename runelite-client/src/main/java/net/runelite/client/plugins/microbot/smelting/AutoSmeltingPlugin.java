@@ -11,7 +11,7 @@ import javax.inject.Inject;
 import java.awt.*;
 
 @PluginDescriptor(
-        name = PluginDescriptor.Vince + "Auto Smelting",
+        name = PluginDescriptor.xsvl + "Auto Smelting",
         description = "Smelt ores/coal into bars",
         tags = {"smithing", "smelting", "microbot", "skilling"},
         enabledByDefault = false
