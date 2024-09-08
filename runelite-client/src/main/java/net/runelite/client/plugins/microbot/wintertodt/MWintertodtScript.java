@@ -94,6 +94,25 @@ public class MWintertodtScript extends Script {
 
         MWintertodtScript.config = config;
         MWintertodtScript.plugin = plugin;
+        Rs2Antiban.resetAntibanSettings();
+        Rs2Antiban.antibanSetupTemplates.applyGeneralBasicSetup();
+        Rs2Antiban.setActivity(Activity.GENERAL_WOODCUTTING);
+        Rs2AntibanSettings.usePlayStyle = true;
+        Rs2AntibanSettings.universalAntiban = false;
+        Rs2AntibanSettings.contextualVariability = true;
+        Rs2AntibanSettings.dynamicActivity = true;
+        Rs2AntibanSettings.behavioralVariability = false;
+        Rs2AntibanSettings.simulateAttentionSpan = false;
+        Rs2AntibanSettings.simulateFatigue = false;
+        Rs2AntibanSettings.simulateMistakes = true;
+        Rs2AntibanSettings.moveMouseRandomly = true;
+        Rs2AntibanSettings.moveMouseOffScreen = true;
+        Rs2AntibanSettings.naturalMouse = true;
+        Rs2AntibanSettings.takeMicroBreaks = true;
+        Rs2AntibanSettings.profileSwitching = false;
+        Rs2AntibanSettings.actionCooldownChance = 0.15;
+        Rs2AntibanSettings.microBreakChance = 0.05;
+        Rs2Antiban.setPlayStyle(PlayStyle.EXTREME_AGGRESSIVE);
         state = State.BANKING;
         mainScheduledFuture = scheduledExecutorService.scheduleWithFixedDelay(() -> {
             try {
