@@ -223,26 +223,7 @@ public class Rs2Player {
         return sleepUntilTrue(() -> skillExp != Microbot.getClient().getSkillExperience(skill) || (inventoryFullCheck && Rs2Inventory.isFull()), 100, time);
     }
 
-    /**
-     * Wait for animation
-     *
-     */
-    public static void waitForAnimation() {
-        boolean result = sleepUntilTrue(Rs2Player::isAnimating, 100, 5000);
-        if (!result) return;
-        sleepUntil(() -> !Rs2Player.isAnimating());
-    }
 
-    /**
-     * Wait for animation
-     *
-     * @param time
-     */
-    public static void waitForAnimation(int time) {
-        boolean result = sleepUntilTrue(Rs2Player::isAnimating, 100, time);
-        if (!result) return;
-        sleepUntil(() -> !Rs2Player.isAnimating(), time);
-    }
 
     /**
      * Chek if the player is animating within the past ms
