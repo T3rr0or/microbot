@@ -487,6 +487,14 @@ public class Rs2Player {
         return false;
     }
 
+    public static boolean drinkRestorePotionAt(int prayerPoints) {
+        if  (Microbot.getClient().getBoostedSkillLevel(Skill.PRAYER) <= prayerPoints) {
+            return Rs2Inventory.interact("super restore", "drink");
+        }
+        return false;
+    }
+
+
     /**
      * Checks if the player has prayer points remaining
      *
