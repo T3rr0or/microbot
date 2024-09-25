@@ -14,7 +14,7 @@ import javax.inject.Inject;
 import java.awt.*;
 
 @PluginDescriptor(
-        name = PluginDescriptor.Default + "Scurrius",
+        name = PluginDescriptor.xsvl + "Scurrius",
         description = "Scurrius example plugin",
         tags = {"microbot", "scurrius", "boss"},
         enabledByDefault = false

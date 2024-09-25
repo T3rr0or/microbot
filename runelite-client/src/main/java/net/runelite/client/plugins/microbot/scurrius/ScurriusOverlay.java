@@ -21,7 +21,7 @@ public class ScurriusOverlay extends OverlayPanel {
         try {
             panelComponent.setPreferredSize(new Dimension(200, 300));
             panelComponent.getChildren().add(TitleComponent.builder()
-                    .text("Micro Scurrius V" + ScurriusScript.version)
+                    .text("Terror Scurrius V" + ScurriusScript.version)
                     .color(Color.GREEN)
                     .build());
 

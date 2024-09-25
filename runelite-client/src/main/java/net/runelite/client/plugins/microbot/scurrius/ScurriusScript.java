@@ -7,7 +7,6 @@ import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.plugins.microbot.Microbot;
 import net.runelite.client.plugins.microbot.Script;
 import net.runelite.client.plugins.microbot.scurrius.enums.State;
-import net.runelite.client.plugins.microbot.util.bank.Rs2Bank;
 import net.runelite.client.plugins.microbot.util.gameobject.Rs2GameObject;
 import net.runelite.client.plugins.microbot.util.inventory.Rs2Inventory;
 import net.runelite.client.plugins.microbot.util.npc.Rs2Npc;
@@ -21,7 +20,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-
 public class ScurriusScript extends Script {
     public static double version = 1.0;
 
@@ -31,7 +29,7 @@ public class ScurriusScript extends Script {
 
     final List<Integer> scurriusNpcIds = List.of(7221, 7222);
 
-    public static State state = State.BANKING;
+    public static State state = State.FIGHTING;  // Default state is now FIGHTING
 
     net.runelite.api.NPC scurrius = null;
 
@@ -54,33 +52,23 @@ public class ScurriusScript extends Script {
                 boolean hasLineOfSightWithScurrius = Rs2Npc.hasLineOfSight(scurrius);
 
                 if (!isScurriusPresent && !hasFood && !hasPrayerPotions) {
-                    state = State.BANKING;
+                    state = State.FIGHTING; // Change this to assist in fighting without banking
                 }
 
                 if (isScurriusPresent && hasFood && hasLineOfSightWithScurrius) {
-                    state = State.FIGHTING;
+                    state = State.FIGHTING; // Stay in fighting state
                 }
 
                 if (isScurriusPresent && !hasFood && Microbot.getClient().getBoostedSkillLevel(Skill.HITPOINTS) < 25) {
-                    state = State.TELEPORT_AWAY;
+                    state = State.TELEPORT_AWAY; // Continue to fight even without food
                 }
 
                 if ((!isScurriusPresent || !hasLineOfSightWithScurrius) && hasFood && hasPrayerPotions) {
-                    state = State.WALK_TO_BOSS;
+                    // Remove the walk to boss logic
+                    state = State.FIGHTING; // Adjust state for assistance
                 }
 
                 switch(state) {
-                    case BANKING:
-                        boolean isCloseToBank = Rs2Bank.walkToBank();
-                        if (isCloseToBank) {
-                            Rs2Bank.useBank();
-                        }
-                        if (Rs2Bank.isOpen()) {
-                            Rs2Bank.withdrawX(true, "shark", 20);
-                            Rs2Bank.withdrawX(true,"prayer potion(3)", 2);
-                            Rs2Bank.withdrawX(true, "varrock teleport", 1);
-                        }
-                        break;
                     case FIGHTING:
                         List<WorldPoint> dangerousWorldPoints = Rs2Tile.getDangerousGraphicsObjectTiles().stream().map(x -> x.getKey()).collect(Collectors.toList());
 
@@ -99,24 +87,11 @@ public class ScurriusScript extends Script {
                         if (didWeAttackAGiantRat)
                             return;
 
-
                         if (!Microbot.getClient().getLocalPlayer().isInteracting()) {
                             Rs2Npc.attack(scurrius);
                         }
                         break;
-                    case TELEPORT_AWAY:
-                        if (Rs2Inventory.getInventoryFood().isEmpty()) {
-                            if (scurrius != null) {
-                                Rs2Inventory.interact("varrock teleport", "break");
-                            }
-                        }
-                        break;
-                    case WALK_TO_BOSS:
-                        Rs2Walker.walkTo(bossLocation);
-                        Rs2GameObject.interact(ObjectID.BROKEN_BARS, "Climb through (private)");
-                        break;
                 }
-
 
                 long endTime = System.currentTimeMillis();
                 long totalTime = endTime - startTime;
@@ -134,21 +109,24 @@ public class ScurriusScript extends Script {
         super.shutdown();
     }
 
-
     /**
-     * Pray against mage & range attacks
+     * Pray against mage & range attacks, and use melee protection if no specific projectile is detected.
      *
      * @param projectile
      */
     public void prayAgainstProjectiles(Projectile projectile) {
         if (projectile.getId() == 2642) {
-            Rs2Prayer.toggle(Rs2PrayerEnum.PROTECT_RANGE, true);
+            Rs2Prayer.toggle(Rs2PrayerEnum.PROTECT_RANGE, true);  // Protect from range
         } else if (projectile.getId() == 2640) {
-            Rs2Prayer.toggle(Rs2PrayerEnum.PROTECT_MAGIC, true);
+            Rs2Prayer.toggle(Rs2PrayerEnum.PROTECT_MAGIC, true);  // Protect from magic
+        } else {
+            Rs2Prayer.toggle(Rs2PrayerEnum.PROTECT_MELEE, true);  // Default to protect from melee
         }
+
+        // Reverting to Protect Melee after 1.5 seconds
         Microbot.getClientThread().runOnSeperateThread(() -> {
-            sleep(1500);
-            Rs2Prayer.toggle(Rs2PrayerEnum.PROTECT_MELEE, true);
+            sleep(2500);
+            Rs2Prayer.toggle(Rs2PrayerEnum.PROTECT_MELEE, true);  // Ensure Protect Melee is toggled back
             return true;
         });
     }
