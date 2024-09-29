@@ -433,7 +433,7 @@ public class Rs2GameObject {
         return null;
     }
 
-    public static GameObject findObject(String objectName, boolean exact, int distance, boolean hasLineOfSight, WorldPoint anchorPoint) {
+    public static GameObject findObject(String objectName, boolean exact, int distance, boolean checkLineOfSight, WorldPoint anchorPoint) {
         List<GameObject> gameObjects = getGameObjectsWithinDistance(distance, anchorPoint);
 
         if (gameObjects == null) {
@@ -444,7 +444,7 @@ public class Rs2GameObject {
             if (!Rs2Tile.areSurroundingTilesWalkable(gameObject.getWorldLocation(), gameObject.sizeX(), gameObject.sizeY()))
                 continue;
 
-            if (hasLineOfSight && !hasLineOfSight(gameObject))
+            if (checkLineOfSight && !hasLineOfSight(gameObject))
                 continue;
 
             ObjectComposition objComp = convertGameObjectToObjectComposition(gameObject);
@@ -455,7 +455,7 @@ public class Rs2GameObject {
             String compName;
 
             try {
-                compName = !objComp.getName().equals("null") ? objComp.getName() : (objComp.getImpostor() != null ? objComp.getImpostor().getName() : null);
+                compName = objComp.getName() != null && !objComp.getName().equals("null") ? objComp.getName() : (objComp.getImpostor() != null ? objComp.getImpostor().getName() : null);
             } catch (Exception e) {
                 continue;
             }
@@ -670,8 +670,6 @@ public class Rs2GameObject {
     }
 
     public static ObjectComposition convertGameObjectToObjectComposition(TileObject tileObject) {
-        Player player = Microbot.getClient().getLocalPlayer();
-        if (player.getLocalLocation().distanceTo(tileObject.getLocalLocation()) > 4800) return null;
         return Microbot.getClientThread().runOnClientThread(() -> Microbot.getClient().getObjectDefinition(tileObject.getId()));
     }
 
@@ -875,13 +873,13 @@ public class Rs2GameObject {
     }
 
     public static List<GameObject> getGameObjects() {
-        Scene scene = Microbot.getClient().getScene();
-        Tile[][][] tiles = scene.getTiles();
+        Scene scene = Microbot.getClient().getTopLevelWorldView().getScene();
+        Tile[][][] tiles = scene.getExtendedTiles();
 
         int z = Microbot.getClient().getPlane();
         List<GameObject> tileObjects = new ArrayList<>();
-        for (int x = 0; x < Constants.SCENE_SIZE; ++x) {
-            for (int y = 0; y < Constants.SCENE_SIZE; ++y) {
+        for (int x = 0; x < Constants.EXTENDED_SCENE_SIZE; ++x) {
+            for (int y = 0; y < Constants.EXTENDED_SCENE_SIZE; ++y) {
                 Tile tile = tiles[z][x][y];
 
                 if (tile == null) {
@@ -1060,7 +1058,8 @@ public class Rs2GameObject {
 
     private static boolean clickObject(TileObject object, String action) {
         if (object == null) return false;
-        if (Microbot.getClient().getLocalPlayer().getWorldLocation().distanceTo2D(object.getWorldLocation()) > 30) {
+        if (Microbot.getClient().getLocalPlayer().getWorldLocation().distanceTo2D(object.getWorldLocation()) > 51) {
+            Microbot.log("Walking to the object...");
             Rs2Walker.walkTo(object.getWorldLocation());
             return false;
         }
@@ -1143,7 +1142,7 @@ public class Rs2GameObject {
             //Rs2Reflection.invokeMenu(param0, param1, menuAction.getId(), object.getId(),-1, "", "", -1, -1);
 
         } catch (Exception ex) {
-            System.out.println(ex.getMessage());
+            Microbot.log("Failed to interact with object " + ex.getMessage());
         }
 
         return true;
