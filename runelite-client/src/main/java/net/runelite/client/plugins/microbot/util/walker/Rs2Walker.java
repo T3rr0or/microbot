@@ -85,13 +85,12 @@ public class Rs2Walker {
                         break;
                     }
                     if (ShortestPathPlugin.getPathfinder() == null) {
-                        if (ShortestPathPlugin.getMarker() == null)
+                        if (ShortestPathPlugin.getMarker() == null) {
                             break;
-                        Microbot.status = "Waiting for pathfinder...";
+                        }
                         continue;
                     }
                     if (!ShortestPathPlugin.getPathfinder().isDone()) {
-                        Microbot.status = "Waiting for path calculation...";
                         continue;
                     }
 
@@ -121,20 +120,24 @@ public class Rs2Walker {
                     int indexOfStartPoint = getClosestTileIndex(path);
                     lastPosition = Rs2Player.getWorldLocation();
 
-                    if (Rs2Player.getWorldLocation().distanceTo(target) == 0)
+                    if (Rs2Player.getWorldLocation().distanceTo(target) == 0) {
                         break;
+                    }
 
 
                     /**
                      * MAIN WALK LOOP
                      */
                     boolean doorOrTransportResult = false;
-                    boolean hasExecutedWalkingAction = false;
                     for (int i = indexOfStartPoint; i < path.size(); i++) {
                         WorldPoint currentWorldPoint = path.get(i);
 
                         if (i > 0 && !Rs2Tile.isTileReachable(path.get(i - 1)) && !Microbot.getClient().isInInstancedRegion()) {
                             continue;
+                        }
+
+                        if (ShortestPathPlugin.getMarker() == null) {
+                            break;
                         }
 
                         /**
@@ -148,19 +151,16 @@ public class Rs2Walker {
                         }
 
                         if (!Microbot.getClient().isInInstancedRegion()) {
-                            Microbot.status = "Checking for transports...";
                             doorOrTransportResult = handleTransports(path, i);
                         }
 
-                        if (doorOrTransportResult)
+                        if (doorOrTransportResult) {
                             break;
+                        }
 
                         if (!Rs2Tile.isTileReachable(currentWorldPoint) && !Microbot.getClient().isInInstancedRegion()) {
                             continue;
                         }
-
-                        if (hasExecutedWalkingAction)
-                            continue;
 
                         if (currentWorldPoint.distanceTo2D(Rs2Player.getWorldLocation()) > nextWalkingDistance) {
                             nextWalkingDistance = Random.random(7, 11);
@@ -176,10 +176,10 @@ public class Rs2Walker {
                                         sleepGaussian(600, 150);
                                     }
                                 }
-                                hasExecutedWalkingAction = true;
                             }
                         }
                     }
+
 
                     if (!doorOrTransportResult) {
                         var moveableTiles = Rs2Tile.getReachableTilesFromTile(path.get(path.size() - 1), Math.min(3, distance)).keySet().toArray(new WorldPoint[0]);
@@ -201,6 +201,7 @@ public class Rs2Walker {
                 Microbot.log("Microbot Walker Exception " + ex.getMessage());
                 System.out.println(ex.getMessage());
                 ex.printStackTrace(System.out);
+                currentTarget = null;
             }
             return false;
         });
@@ -648,7 +649,7 @@ public class Rs2Walker {
                         }
                     }
 
-                    if (b.getDestination().distanceTo2D(Rs2Player.getWorldLocation()) > 20) {
+                    if (b.getObjectName() != null && b.getObjectName().contains("trapdoor") && b.getDestination().distanceTo2D(Rs2Player.getWorldLocation()) > 20) {
                         if (handleTrapdoor(b))
                             break;
                     }
@@ -658,7 +659,7 @@ public class Rs2Walker {
                     }
 
 
-                    if (b.isGnomeGlider()) {
+                    if (b.isGnomeGlider() && b.getOrigin().distanceTo(Rs2Player.getWorldLocation()) < 12) {
                         b.handleGlider();
                     }
 

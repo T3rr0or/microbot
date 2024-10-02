@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldArea;
-import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.plugins.grounditems.GroundItem;
 import net.runelite.client.plugins.grounditems.GroundItemsPlugin;
 import net.runelite.client.plugins.microbot.Microbot;
@@ -14,6 +13,7 @@ import net.runelite.client.plugins.microbot.util.menu.NewMenuEntry;
 import net.runelite.client.plugins.microbot.util.models.RS2Item;
 import net.runelite.client.plugins.microbot.util.player.Rs2Player;
 import net.runelite.client.plugins.microbot.util.reflection.Rs2Reflection;
+import net.runelite.client.plugins.microbot.util.tile.Rs2Tile;
 
 import java.awt.*;
 import java.time.Instant;
@@ -27,6 +27,9 @@ import java.util.stream.Collectors;
 import static net.runelite.api.TileItem.OWNERSHIP_SELF;
 import static net.runelite.client.plugins.microbot.util.Global.sleepUntil;
 
+/**
+ * Todo: rework this class to not be dependant on the grounditem plugin
+ */
 @Slf4j
 public class Rs2GroundItem {
 
@@ -144,7 +147,7 @@ public class Rs2GroundItem {
             }
             List<RS2Item> list = new ArrayList<>();
 
-            Tile tile = getTile(x, y);
+            Tile tile = Rs2Tile.getTile(x, y);
             if (tile == null) {
                 return null;
             }
@@ -159,16 +162,6 @@ public class Rs2GroundItem {
             }
             return list.toArray(new RS2Item[list.size()]);
         });
-    }
-
-    public static Tile getTile(int x, int y) {
-        WorldPoint worldPoint = new WorldPoint(x, y, Microbot.getClient().getPlane());
-        if (worldPoint.isInScene(Microbot.getClient())) {
-            LocalPoint localPoint = LocalPoint.fromWorld(Microbot.getClient(), worldPoint);
-            if (localPoint == null) return null;
-            return Microbot.getClient().getScene().getTiles()[worldPoint.getPlane()][localPoint.getSceneX()][localPoint.getSceneY()];
-        }
-        return null;
     }
 
     public static RS2Item[] getAll(int range) {
@@ -444,7 +437,7 @@ public class Rs2GroundItem {
         return false;
     }
 
-    @Deprecated(since = "1.4.6", forRemoval = true)
+    @Deprecated(since = "1.4.6, use lootItemsBasedOnNames(LootingParameters params)", forRemoval = true)
     public static boolean lootAllItemBasedOnValue(int value, int range) {
         RS2Item[] groundItems = Microbot.getClientThread().runOnClientThread(() ->
                 Rs2GroundItem.getAll(range)
@@ -461,7 +454,11 @@ public class Rs2GroundItem {
         return false;
     }
 
-    @Deprecated(since = "1.4.6", forRemoval = true)
+    /**
+     * TODO: rework this to make use of the coreloot method
+     * @param itemId
+     * @return
+     */
     public static boolean loot(int itemId) {
         if (Rs2Inventory.isFull(itemId)) return false;
         RS2Item[] groundItems = Microbot.getClientThread().runOnClientThread(() ->
@@ -512,6 +509,16 @@ public class Rs2GroundItem {
         for (RS2Item rs2Item : groundItems) {
             if (rs2Item.getItem().getId() == itemId) {
                 interact(rs2Item, action);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean exists(int id, int range) {
+        RS2Item[] groundItems = Microbot.getClientThread().runOnClientThread(() -> Rs2GroundItem.getAll(range));
+        for (RS2Item rs2Item : groundItems) {
+            if (rs2Item.getItem().getId() == id) {
                 return true;
             }
         }
