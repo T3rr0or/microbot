@@ -15,7 +15,7 @@ import java.awt.*;
 
 @PluginDescriptor(
         name = PluginDescriptor.xsvl + "Scurrius",
-        description = "Scurrius example plugin",
+        description = "Scurrius plugin",
         tags = {"microbot", "scurrius", "boss"},
         enabledByDefault = false
 )
