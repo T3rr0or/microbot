@@ -173,6 +173,10 @@ public class Rs2Equipment {
         return isEquipped("guthan's chainskirt", EquipmentInventorySlot.LEGS);
     }
 
+    public static boolean hasDdspEquiped() {
+        return isEquipped("dragon dagger(p++)", EquipmentInventorySlot.WEAPON);
+    }
+
     public static boolean hasGuthanHelmEquiped() {
         return isEquipped("guthan's helm", EquipmentInventorySlot.HEAD);
     }

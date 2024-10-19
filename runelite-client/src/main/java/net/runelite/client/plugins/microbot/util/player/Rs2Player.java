@@ -172,7 +172,7 @@ public class Rs2Player {
                     .findFirst();
 
             if (foodToEat.isPresent()) {
-                String interaction = foodToEat.get().getName().toLowerCase().contains("jug of wine") ? "drink" : "eat";
+                String interaction = foodToEat.get().getName().toLowerCase().contains("brew") ? "drink" : "eat";
                 return Rs2Inventory.interact(foodToEat.get(), interaction);
             }
         }
@@ -423,7 +423,7 @@ public class Rs2Player {
     public static boolean useFood() {
         List<Rs2Item> foods = Rs2Inventory.getInventoryFood();
         if (!foods.isEmpty()) {
-            if (foods.get(0).getName().toLowerCase().contains("jug of wine")) {
+            if (foods.get(0).getName().toLowerCase().contains("brew")) {
                 return Rs2Inventory.interact(foods.get(0), "drink");
             } else {
                 return Rs2Inventory.interact(foods.get(0), "eat");
@@ -500,6 +500,14 @@ public class Rs2Player {
         }
         return false;
     }
+
+    public static boolean drinkMoonlightPotionAt(int prayerPoints) {
+        if  (Microbot.getClient().getBoostedSkillLevel(Skill.PRAYER) <= prayerPoints) {
+            return Rs2Inventory.interact("moonlight potion", "drink");
+        }
+        return false;
+    }
+
 
     public static boolean drinkRestorePotionAt(int prayerPoints) {
         if  (Microbot.getClient().getBoostedSkillLevel(Skill.PRAYER) <= prayerPoints) {

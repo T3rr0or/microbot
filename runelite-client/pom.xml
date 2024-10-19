@@ -406,7 +406,7 @@
 							<goal>shade</goal>
 						</goals>
 						<configuration>
-							<outputFile>target/microbot-${microbot.version}.jar</outputFile>
+							<outputFile>target/TerrorClient-latest.jar</outputFile>
 							<skip>${shade.skip}</skip>
 							<shadedArtifactAttached>true</shadedArtifactAttached>
 							<shadedClassifierName>shaded</shadedClassifierName>

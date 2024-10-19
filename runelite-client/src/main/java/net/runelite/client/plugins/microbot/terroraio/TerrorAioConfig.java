@@ -43,8 +43,17 @@ public interface TerrorAioConfig extends Config {
     }
 
     @ConfigItem(
+            keyName = "toggleMoonlight",
+            name = "Enable Moonlight Restoration",
+            description = "Toggle the automatic Moonlight restoration feature."
+    )
+    default boolean toggleMoonlight() {
+        return true; // Default to true
+    }
+
+    @ConfigItem(
             keyName = "toggleSpec",
-            name = "Enable Special Attack",
+            name = "Enable DDS Special Attack when equipping DDS",
             description = "Toggle the automatic special attack feature."
     )
     default boolean toggleSpec() {

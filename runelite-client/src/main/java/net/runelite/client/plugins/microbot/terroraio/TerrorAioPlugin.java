@@ -8,6 +8,8 @@ import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.plugins.microbot.util.combat.Rs2Combat;
+import net.runelite.client.plugins.microbot.util.equipment.Rs2Equipment;
+import net.runelite.client.plugins.microbot.util.inventory.Rs2Inventory;
 import net.runelite.client.plugins.microbot.util.player.Rs2Player;
 
 import javax.inject.Inject;
@@ -57,8 +59,13 @@ public class TerrorAioPlugin extends Plugin {
             Rs2Player.drinkRestorePotionAt(20);
         }
 
+        if (config.toggleMoonlight()) {
+            Rs2Player.drinkMoonlightPotionAt(20);
+        }
+
         if (config.toggleSpec()) {
-            Rs2Combat.setSpecState(true, 500);
+            if (Rs2Equipment.hasDdspEquiped())
+                Rs2Combat.setSpecState(true, 250);
         }
     }
 }

@@ -7,6 +7,7 @@ import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.plugins.microbot.Microbot;
 import net.runelite.client.plugins.microbot.Script;
 import net.runelite.client.plugins.microbot.scurrius.enums.State;
+import net.runelite.client.plugins.microbot.util.bank.Rs2Bank;
 import net.runelite.client.plugins.microbot.util.gameobject.Rs2GameObject;
 import net.runelite.client.plugins.microbot.util.inventory.Rs2Inventory;
 import net.runelite.client.plugins.microbot.util.npc.Rs2Npc;
@@ -24,12 +25,10 @@ public class ScurriusScript extends Script {
     public static double version = 1.0;
 
     final WorldPoint bossLocation = new WorldPoint(3279, 9869, 0);
-
     private static final int FALLING_ROCKS = 2644;
-
     final List<Integer> scurriusNpcIds = List.of(7221, 7222);
-
-    public static State state = State.FIGHTING;  // Default state is now FIGHTING
+    public static State state = State.BANKING;
+    private boolean hasTeleportedAway = true; // Start as true to ensure the initial walk to the boss
 
     net.runelite.api.NPC scurrius = null;
 
@@ -52,25 +51,41 @@ public class ScurriusScript extends Script {
                 boolean hasLineOfSightWithScurrius = Rs2Npc.hasLineOfSight(scurrius);
 
                 if (!isScurriusPresent && !hasFood && !hasPrayerPotions) {
-                    state = State.FIGHTING; // Change this to assist in fighting without banking
+                    state = State.BANKING;
                 }
 
                 if (isScurriusPresent && hasFood && hasLineOfSightWithScurrius) {
-                    state = State.FIGHTING; // Stay in fighting state
+                    state = State.FIGHTING;
                 }
 
                 if (isScurriusPresent && !hasFood && Microbot.getClient().getBoostedSkillLevel(Skill.HITPOINTS) < 25) {
-                    state = State.TELEPORT_AWAY; // Continue to fight even without food
+                    state = State.TELEPORT_AWAY;
                 }
 
-                if ((!isScurriusPresent || !hasLineOfSightWithScurrius) && hasFood && hasPrayerPotions) {
-                    // Remove the walk to boss logic
-                    state = State.FIGHTING; // Adjust state for assistance
+                // Check for teleport status before WALK_TO_BOSS
+                if ((!isScurriusPresent || !hasLineOfSightWithScurrius) && hasFood && hasPrayerPotions && hasTeleportedAway) {
+                    state = State.WALK_TO_BOSS;
                 }
 
                 switch(state) {
+                    case BANKING:
+                        boolean isCloseToBank = Rs2Bank.walkToBank();
+                        if (isCloseToBank) {
+                            Rs2Bank.useBank();
+                        }
+                        if (Rs2Bank.isOpen()) {
+                            Rs2Bank.depositAll();
+                            Rs2Bank.withdrawX(true, "shark", 20);
+                            Rs2Bank.withdrawX(true,"prayer potion(4)", 7);
+                            Rs2Bank.withdrawX(true, "varrock teleport", 1);
+                            sleep(1000);
+                            Rs2Bank.closeBank();
+                        }
+                        break;
+
                     case FIGHTING:
-                        List<WorldPoint> dangerousWorldPoints = Rs2Tile.getDangerousGraphicsObjectTiles().stream().map(x -> x.getKey()).collect(Collectors.toList());
+                        List<WorldPoint> dangerousWorldPoints = Rs2Tile.getDangerousGraphicsObjectTiles().stream()
+                                .map(x -> x.getKey()).collect(Collectors.toList());
 
                         for (WorldPoint worldPoint: dangerousWorldPoints) {
                             if (Rs2Player.getWorldLocation().equals(worldPoint)) {
@@ -83,13 +98,28 @@ public class ScurriusScript extends Script {
                         Rs2Player.drinkPrayerPotionAt(20);
 
                         boolean didWeAttackAGiantRat = scurrius != null && config.prioritizeRats() && Rs2Npc.attack("giant rat");
-
                         if (didWeAttackAGiantRat)
                             return;
 
                         if (!Microbot.getClient().getLocalPlayer().isInteracting()) {
                             Rs2Npc.attack(scurrius);
                         }
+                        break;
+
+                    case TELEPORT_AWAY:
+                        if (Rs2Inventory.getInventoryFood().isEmpty()) {
+                            if (scurrius != null) {
+                                Rs2Inventory.interact("varrock teleport", "break");
+                                hasTeleportedAway = true; // Set flag to true after teleporting
+                                state = State.BANKING;
+                            }
+                        }
+                        break;
+
+                    case WALK_TO_BOSS:
+                        Rs2Walker.walkTo(bossLocation);
+                        Rs2GameObject.interact(ObjectID.BROKEN_BARS, "Climb through (private)");
+                        hasTeleportedAway = false; // Reset flag after reaching the boss
                         break;
                 }
 
@@ -110,7 +140,7 @@ public class ScurriusScript extends Script {
     }
 
     /**
-     * Pray against mage & range attacks, and use melee protection if no specific projectile is detected.
+     * Pray against mage & range attacks, and default to melee.
      *
      * @param projectile
      */
@@ -119,13 +149,11 @@ public class ScurriusScript extends Script {
             Rs2Prayer.toggle(Rs2PrayerEnum.PROTECT_RANGE, true);  // Protect from range
         } else if (projectile.getId() == 2640) {
             Rs2Prayer.toggle(Rs2PrayerEnum.PROTECT_MAGIC, true);  // Protect from magic
-        } else {
-            Rs2Prayer.toggle(Rs2PrayerEnum.PROTECT_MELEE, true);  // Default to protect from melee
         }
 
         // Reverting to Protect Melee after 1.5 seconds
         Microbot.getClientThread().runOnSeperateThread(() -> {
-            sleep(2500);
+            sleep(3000);
             Rs2Prayer.toggle(Rs2PrayerEnum.PROTECT_MELEE, true);  // Ensure Protect Melee is toggled back
             return true;
         });
